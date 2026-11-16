@@ -9,7 +9,8 @@ class AppColors {
   static const Color primary = Color(0xFF1D4ED8); // blue-700
   static const Color primaryHover = Color(0xFF1E40AF); // blue-800
   static const Color primarySoft = Color(0xFFEFF6FF); // blue-50 (pills/badge)
-  static const Color primarySoftStrong = Color(0xFFDBEAFE); // blue-100 (card header band)
+  static const Color primarySoftStrong =
+      Color(0xFFDBEAFE); // blue-100 (card header band)
 
   // Secondary module accent (Risk Management)
   static const Color amber = Color(0xFFD97706); // amber-600
@@ -44,6 +45,7 @@ class AppTheme {
   static ThemeData get light {
     final base = ThemeData(
       useMaterial3: true,
+      fontFamily: 'Plus Jakarta Sans',
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,

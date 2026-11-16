@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'dashboard_tab.dart';
-import 'history_tab.dart';
-import 'profile_tab.dart';
+import 'upload_floor_plan_screen.dart';
+import 'risk_management_tab.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -14,13 +14,15 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _tabs = [DashboardTab(), HistoryTab(), ProfileTab()];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: IndexedStack(index: _index, children: _tabs),
+      body: IndexedStack(index: _index, children: [
+        DashboardTab(onModuleSelected: (i) => setState(() => _index = i)),
+        const UploadFloorPlanScreen(embedded: true),
+        const RiskManagementTab(),
+      ]),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           indicatorColor: AppColors.primarySoft,
@@ -41,19 +43,22 @@ class _HomeShellState extends State<HomeShell> {
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined, color: AppColors.textMuted),
-              selectedIcon: Icon(Icons.dashboard_rounded, color: AppColors.primary),
-              label: 'Dashboard',
+              icon: Icon(Icons.home_outlined, color: AppColors.textMuted),
+              selectedIcon: Icon(Icons.home_outlined, color: AppColors.primary),
+              label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(Icons.history_rounded, color: AppColors.textMuted),
-              selectedIcon: Icon(Icons.history_rounded, color: AppColors.primary),
-              label: 'History',
+              icon: Icon(Icons.space_dashboard_outlined,
+                  color: AppColors.textMuted),
+              selectedIcon: Icon(Icons.space_dashboard_outlined,
+                  color: AppColors.primary),
+              label: 'Floor Plan',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline, color: AppColors.textMuted),
-              selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
-              label: 'Profile',
+              icon: Icon(Icons.bar_chart_outlined, color: AppColors.textMuted),
+              selectedIcon:
+                  Icon(Icons.bar_chart_outlined, color: AppColors.primary),
+              label: 'Risk',
             ),
           ],
         ),

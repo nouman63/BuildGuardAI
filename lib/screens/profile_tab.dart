@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'history_tab.dart';
+import 'risk_management_tab.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -19,9 +21,7 @@ class ProfileTab extends StatelessWidget {
               radius: 38,
               backgroundColor: AppColors.primarySoft,
               child: Text(
-                (state.userName?.isNotEmpty == true
-                        ? state.userName![0]
-                        : '?')
+                (state.userName?.isNotEmpty == true ? state.userName![0] : '?')
                     .toUpperCase(),
                 style: const TextStyle(
                   color: AppColors.primary,
@@ -52,11 +52,57 @@ class ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          _tile(Icons.person_outline, 'Account Details'),
-          _tile(Icons.notifications_none_rounded, 'Notifications'),
-          _tile(Icons.lock_outline, 'Privacy & Security'),
-          _tile(Icons.help_outline_rounded, 'Help & Support'),
-          _tile(Icons.info_outline_rounded, 'About BuildGuard AI'),
+          const Text('ACCOUNT INFORMATION',
+              style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          _tile(Icons.person_outline, 'Username',
+              subtitle: state.userName ?? 'Guest'),
+          _tile(Icons.mail_outline, 'Email', subtitle: state.userEmail ?? ''),
+          _tile(Icons.lock_outline, 'Password', subtitle: '••••••••'),
+          const SizedBox(height: 16),
+          const Text('REPORTS & SETTINGS',
+              style: TextStyle(
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          _tile(Icons.description_outlined, 'Saved Reports',
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                          appBar: AppBar(title: const Text('Saved Reports')),
+                          body: state.riskReports.isEmpty
+                              ? const Center(
+                                  child: Text('No saved risk reports yet.'))
+                              : ListView(children: [
+                                  for (final report in state.riskReports)
+                                    ListTile(
+                                        title: Text(report.name),
+                                        subtitle: Text('${report.level} risk'),
+                                        onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) => Scaffold(
+                                                    appBar: AppBar(
+                                                        title: const Text(
+                                                            'Saved Report')),
+                                                    body: RiskReportView(
+                                                        report: report))))),
+                                ]))))),
+          _tile(Icons.history, 'Floor Plan History',
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                          appBar:
+                              AppBar(title: const Text('Floor Plan History')),
+                          body: const HistoryTab())))),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -83,7 +129,8 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
-  Widget _tile(IconData icon, String label) {
+  Widget _tile(IconData icon, String label,
+      {String? subtitle, VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -96,8 +143,13 @@ class ProfileTab extends StatelessWidget {
           label,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-        onTap: () {},
+        subtitle: subtitle == null
+            ? null
+            : Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: onTap == null
+            ? null
+            : const Icon(Icons.chevron_right, color: AppColors.textMuted),
+        onTap: onTap,
       ),
     );
   }

@@ -1,221 +1,181 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/project.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
-import '../widgets/project_card.dart';
+import '../widgets/app_logo.dart';
+import '../widgets/module_ui.dart';
+import 'risk_management_tab.dart';
 
 class DashboardTab extends StatelessWidget {
-  const DashboardTab({super.key});
-
+  final ValueChanged<int> onModuleSelected;
+  const DashboardTab({super.key, required this.onModuleSelected});
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final projects = state.projects;
-    final highRisk = projects.where((p) => p.riskLevel == RiskLevel.high).length;
-
+    final reports = context.watch<AppState>().riskReports;
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        children: [
-          Row(
+        child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hi, ${state.userName ?? 'there'} 👋',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.navy,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Here\'s your project overview',
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 13.5),
-                    ),
-                  ],
-                ),
-              ),
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.primarySoft,
-                child: Text(
-                  (state.userName?.isNotEmpty == true
-                          ? state.userName![0]
-                          : '?')
-                      .toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _StatTile(
-                  label: 'Active Projects',
-                  value: projects.length.toString(),
-                  icon: Icons.apartment_rounded,
-                  color: AppColors.primary,
-                  bg: AppColors.primarySoft,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatTile(
-                  label: 'High Risk',
-                  value: highRisk.toString(),
-                  icon: Icons.warning_amber_rounded,
-                  color: AppColors.danger,
-                  bg: AppColors.danger.withValues(alpha: 0.08),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          InkWell(
-            onTap: () => Navigator.pushNamed(context, '/upload'),
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            child: Container(
-              width: double.infinity,
+          Row(children: [
+            const Expanded(child: AppLogo(size: 32)),
+            IconButton.filledTonal(
+                tooltip: 'Profile',
+                onPressed: () => Navigator.pushNamed(context, '/profile'),
+                icon: const Icon(Icons.person_outline_rounded,
+                    color: AppColors.primary, size: 20))
+          ]),
+          const SizedBox(height: 18),
+          Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryHover],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: const Icon(Icons.add_a_photo_outlined,
-                        color: Colors.white),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'New Floor Plan Analysis',
-                          style: TextStyle(
-                            color: Colors.white,
+                  gradient: const LinearGradient(colors: [
+                    AppColors.primarySoft,
+                    AppColors.primarySoftStrong
+                  ]),
+                  borderRadius: BorderRadius.circular(18)),
+              child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Eyebrow('Authenticated'),
+                    SizedBox(height: 8),
+                    Text('Welcome Back!',
+                        style: TextStyle(
+                            fontSize: 24,
                             fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Upload a plan to detect violations & risks',
-                          style: TextStyle(
-                            color: Colors.white70,
+                            letterSpacing: -.7)),
+                    SizedBox(height: 8),
+                    Text(
+                        'Your smarter way to analyze construction compliance and project risks.',
+                        style: TextStyle(
                             fontSize: 12.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      color: Colors.white, size: 16),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 26),
-          const Text(
-            'Recent Projects',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.navy,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...projects.take(3).map(
-                (p) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: ProjectCard(
-                    project: p,
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      '/result',
-                      arguments: p.id,
-                    ),
-                  ),
-                ),
-              ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final Color bg;
-
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.bg,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(icon, color: color, size: 18),
-          ),
+                            height: 1.7,
+                            color: AppColors.textSecondary))
+                  ])),
+          const SizedBox(height: 24),
+          const Eyebrow('Your Construction Assistant'),
+          const SizedBox(height: 14),
+          _module(
+              Icons.space_dashboard_outlined,
+              'Floor Plan Analysis',
+              'Upload an architectural floor plan and use AI-powered computer vision to identify rooms, analyze layouts and detect potential building regulation violations.',
+              'Analyze Floor Plan',
+              AppColors.primary,
+              AppColors.primarySoftStrong,
+              1),
+          _module(
+              Icons.show_chart_rounded,
+              'Risk Management',
+              'Evaluate project schedules, workforce metrics and resource availability to identify potential delays and cost overruns.',
+              'Open Risk Management',
+              AppColors.amber,
+              AppColors.amberSoft,
+              2),
           const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.navy,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-        ],
-      ),
-    );
+          const Eyebrow('Recent Activity'),
+          const SizedBox(height: 14),
+          if (reports.isEmpty)
+            const ModulePanel(children: [
+              Center(
+                  child: Column(children: [
+                Icon(Icons.history_rounded,
+                    size: 30, color: AppColors.textMuted),
+                SizedBox(height: 12),
+                Text('No recent analyses',
+                    style:
+                        TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                SizedBox(height: 6),
+                Text('Upload your first floor plan to get started.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+              ]))
+            ]),
+          for (final report in reports.take(3))
+            Card(
+                child: ListTile(
+                    leading: const Icon(Icons.description_outlined,
+                        color: AppColors.primary),
+                    title: Text(report.name,
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w700)),
+                    subtitle: Text('${report.level} risk · Prototype report',
+                        style: const TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => Scaffold(
+                                appBar:
+                                    AppBar(title: const Text('Saved Report')),
+                                body: RiskReportView(report: report)))))),
+        ]));
   }
+
+  Widget _module(IconData icon, String title, String description, String action,
+          Color accent, Color background, int module) =>
+      Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AppColors.primarySoftStrong),
+              borderRadius: BorderRadius.circular(16)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+                color: background,
+                padding: const EdgeInsets.all(16),
+                child: Row(children: [
+                  Icon(icon, color: accent, size: 30),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(title,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 3),
+                        const Text('Active Feature',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w700))
+                      ]))
+                ])),
+            Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(description,
+                          style: const TextStyle(
+                              fontSize: 12.5,
+                              height: 1.7,
+                              color: AppColors.textSecondary)),
+                      if (module == 2) ...[
+                        const SizedBox(height: 10),
+                        const Text(
+                            'Project inputs · Material inventory · Risk report',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600))
+                      ],
+                      const SizedBox(height: 12),
+                      InkWell(
+                          onTap: () => onModuleSelected(module),
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(children: [
+                                Text(action,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary)),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.arrow_forward,
+                                    size: 15, color: AppColors.primary)
+                              ]))),
+                    ])),
+          ]));
 }

@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const AppLogo(size: 40),
                 const SizedBox(height: 28),
                 const Text(
-                  'Welcome Back!',
+                  'Welcome Back',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Sign in to continue to BuildGuard AI',
+                  'Sign in to continue to BuildGuard AI.',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 28),
                 AppTextField(
-                  label: 'Email',
+                  label: 'Email Address',
                   hint: 'you@company.com',
                   icon: Icons.mail_outline,
                   controller: _email,
@@ -93,28 +93,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? 'Minimum 6 characters'
                       : null,
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  label: 'Log In',
+                  label: 'Login',
                   loading: _loading,
                   onPressed: _submit,
                 ),
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  runSpacing: 8,
                   children: [
                     const Text(
                       "Don't have an account? ",

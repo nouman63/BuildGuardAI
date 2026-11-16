@@ -8,6 +8,7 @@ import 'screens/login_screen.dart';
 import 'screens/project_data_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/upload_floor_plan_screen.dart';
+import 'screens/profile_tab.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 
@@ -26,6 +27,13 @@ class BuildGuardApp extends StatelessWidget {
         title: 'BuildGuard AI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
+        builder: (context, child) => ColoredBox(
+          color: const Color(0xFFD1E3FF),
+          child: Center(
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: child!)),
+        ),
         initialRoute: '/',
         onGenerateRoute: (settings) {
           switch (settings.name) {
@@ -37,6 +45,11 @@ class BuildGuardApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const SignupScreen());
             case '/home':
               return MaterialPageRoute(builder: (_) => const HomeShell());
+            case '/profile':
+              return MaterialPageRoute(
+                  builder: (_) => Scaffold(
+                      appBar: AppBar(title: const Text('Profile')),
+                      body: const ProfileTab()));
             case '/upload':
               return MaterialPageRoute(
                   builder: (_) => const UploadFloorPlanScreen());

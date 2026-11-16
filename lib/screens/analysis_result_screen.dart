@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/project.dart';
@@ -26,6 +27,11 @@ class AnalysisResultScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                    'PROTOTYPE · Sample findings only. No AI model or regulatory validation has been performed.',
+                    style: TextStyle(fontSize: 12, color: AppColors.amber))),
             Row(
               children: [
                 Expanded(
@@ -76,7 +82,8 @@ class AnalysisResultScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _miniStat('Workers', project.numberOfWorkers?.toString() ?? '—'),
+                  child: _miniStat(
+                      'Workers', project.numberOfWorkers?.toString() ?? '—'),
                 ),
                 Expanded(
                   child: _miniStat(
@@ -108,8 +115,7 @@ class AnalysisResultScreen extends StatelessWidget {
                 style: TextStyle(color: AppColors.textMuted),
               )
             else
-              ...project.violations
-                  .map((v) => ViolationTile(violation: v)),
+              ...project.violations.map((v) => ViolationTile(violation: v)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -117,7 +123,8 @@ class AnalysisResultScreen extends StatelessWidget {
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Report generated and saved to project history.')),
+                        content: Text(
+                            'Report generated and saved to project history.')),
                   );
                 },
                 icon: const Icon(Icons.description_outlined, size: 18),
@@ -168,7 +175,16 @@ class _FloorPlanPreview extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           if (path != null)
-            Image.file(File(path), fit: BoxFit.cover)
+            FutureBuilder<Uint8List>(
+                future: XFile(path).readAsBytes(),
+                builder: (context, snapshot) => snapshot.hasData
+                    ? Image.memory(snapshot.data!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                            child: Text('Image preview unavailable')))
+                    : const Center(
+                        child: Icon(Icons.architecture_rounded,
+                            color: AppColors.textMuted)))
           else
             const Center(
               child: Icon(Icons.architecture_rounded,

@@ -28,8 +28,14 @@ class FeatureCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primarySoftStrong),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.primary.withValues(alpha: .06),
+              blurRadius: 14,
+              offset: const Offset(0, 2))
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -37,7 +43,7 @@ class FeatureCard extends StatelessWidget {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             color: headerBg,
             child: Row(
               children: [
@@ -57,7 +63,7 @@ class FeatureCard extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
                           color: AppColors.navy,
                         ),
@@ -66,7 +72,7 @@ class FeatureCard extends StatelessWidget {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: accent,
                         ),
@@ -85,8 +91,8 @@ class FeatureCard extends StatelessWidget {
                 Text(
                   description,
                   style: const TextStyle(
-                    fontSize: 13.5,
-                    height: 1.45,
+                    fontSize: 12.5,
+                    height: 1.65,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -97,7 +103,7 @@ class FeatureCard extends StatelessWidget {
                   children: tags
                       .map((t) => Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                                horizontal: 9, vertical: 4),
                             decoration: BoxDecoration(
                               color: pillBg,
                               borderRadius:
@@ -106,7 +112,7 @@ class FeatureCard extends StatelessWidget {
                             child: Text(
                               t,
                               style: TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: accent,
                               ),

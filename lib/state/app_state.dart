@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/project.dart';
 import '../models/violation.dart';
+import '../models/risk_assessment.dart';
 
 /// Holds session + project data in memory.
 ///
@@ -12,6 +13,11 @@ class AppState extends ChangeNotifier {
   String? userName;
   String? userEmail;
   bool get isLoggedIn => userEmail != null;
+  final List<RiskAssessment> riskReports = [];
+  void saveRiskReport(RiskAssessment report) {
+    riskReports.insert(0, report);
+    notifyListeners();
+  }
 
   final List<Project> projects = [
     Project(
@@ -25,7 +31,8 @@ class AppState extends ChangeNotifier {
       violations: const [
         Violation(
           title: 'Improper Column Spacing',
-          description: 'Columns are placed too close; structural integrity at risk.',
+          description:
+              'Columns are placed too close; structural integrity at risk.',
           severity: Severity.high,
         ),
         Violation(
@@ -53,7 +60,8 @@ class AppState extends ChangeNotifier {
       violations: const [
         Violation(
           title: 'Minor Door Clearance Issue',
-          description: 'One doorway is slightly under the recommended clearance width.',
+          description:
+              'One doorway is slightly under the recommended clearance width.',
           severity: Severity.low,
         ),
       ],
@@ -70,12 +78,14 @@ class AppState extends ChangeNotifier {
       violations: const [
         Violation(
           title: 'Staircase Width Violation',
-          description: 'Staircase width is below the minimum simplified safety guideline.',
+          description:
+              'Staircase width is below the minimum simplified safety guideline.',
           severity: Severity.medium,
         ),
         Violation(
           title: 'Window Egress Concern',
-          description: 'Bedroom window opening may not meet emergency egress size.',
+          description:
+              'Bedroom window opening may not meet emergency egress size.',
           severity: Severity.medium,
         ),
       ],
@@ -135,7 +145,8 @@ class AppState extends ChangeNotifier {
     project.violations = const [
       Violation(
         title: 'Improper Column Spacing',
-        description: 'Columns are placed too close; structural integrity at risk.',
+        description:
+            'Columns are placed too close; structural integrity at risk.',
         severity: Severity.high,
       ),
       Violation(
