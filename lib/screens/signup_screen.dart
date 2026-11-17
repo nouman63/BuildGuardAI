@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import '../services/firebase_backend.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_text_field.dart';
@@ -33,10 +34,18 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    context.read<AppState>().signUp(_name.text.trim(), _email.text.trim());
-    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    try {
+      await context
+          .read<AppState>()
+          .signUp(_name.text.trim(), _email.text.trim(), _password.text);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(friendlyError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override

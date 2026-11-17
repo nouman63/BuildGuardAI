@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/project_card.dart';
+import '../widgets/report_sync_status.dart';
 
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
@@ -15,6 +16,7 @@ class HistoryTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const ReportSyncStatus(),
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Text(

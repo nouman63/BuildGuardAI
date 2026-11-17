@@ -25,8 +25,11 @@ class RiskAssessment {
   final DateTime start, completion;
   final double budget, expenses, progress;
   final int workers, skilled;
+  final int floors, rooms, unskilled;
+  final double labourCost, materialCost, otherExpenses;
   final List<SiteMaterial> materials;
   final List<ProjectRisk> risks;
+  final DateTime assessedAt;
 
   RiskAssessment(
       {required this.name,
@@ -44,9 +47,22 @@ class RiskAssessment {
       required this.workers,
       required this.skilled,
       required this.materials,
-      DateTime? assessedAt})
-      : risks = [] {
-    final now = assessedAt ?? DateTime.now();
+      this.floors = 0,
+      this.rooms = 0,
+      int? unskilled,
+      this.labourCost = 0,
+      this.materialCost = 0,
+      this.otherExpenses = 0,
+      DateTime? assessedAt,
+      List<ProjectRisk>? storedRisks})
+      : unskilled = unskilled ?? workers - skilled,
+        assessedAt = assessedAt ?? DateTime.now(),
+        risks = [] {
+    if (storedRisks != null) {
+      risks.addAll(storedRisks);
+      return;
+    }
+    final now = this.assessedAt;
     final duration = completion.difference(start).inDays;
     final elapsed = now.difference(start).inDays;
     final expected =

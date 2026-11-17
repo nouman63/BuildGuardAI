@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import '../services/firebase_backend.dart';
+import '../widgets/report_sync_status.dart';
 import '../theme/app_theme.dart';
 import 'history_tab.dart';
-import 'risk_management_tab.dart';
+import 'saved_reports_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -52,6 +54,8 @@ class ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
+          const ReportSyncStatus(),
+          const ReportSyncStatus(),
           const Text('ACCOUNT INFORMATION',
               style: TextStyle(
                   fontSize: 10,
@@ -75,26 +79,7 @@ class ProfileTab extends StatelessWidget {
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                          appBar: AppBar(title: const Text('Saved Reports')),
-                          body: state.riskReports.isEmpty
-                              ? const Center(
-                                  child: Text('No saved risk reports yet.'))
-                              : ListView(children: [
-                                  for (final report in state.riskReports)
-                                    ListTile(
-                                        title: Text(report.name),
-                                        subtitle: Text('${report.level} risk'),
-                                        onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) => Scaffold(
-                                                    appBar: AppBar(
-                                                        title: const Text(
-                                                            'Saved Report')),
-                                                    body: RiskReportView(
-                                                        report: report))))),
-                                ]))))),
+                      builder: (_) => const SavedReportsScreen()))),
           _tile(Icons.history, 'Floor Plan History',
               onTap: () => Navigator.push(
                   context,
@@ -107,10 +92,15 @@ class ProfileTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {
-                context.read<AppState>().logout();
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/', (route) => false);
+              onPressed: () async {
+                try {
+                  await context.read<AppState>().logout();
+                } catch (error) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(friendlyError(error))));
+                  }
+                }
               },
               icon: const Icon(Icons.logout, color: AppColors.danger),
               label: const Text('Log Out'),

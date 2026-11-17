@@ -4,6 +4,7 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/module_ui.dart';
+import '../widgets/report_sync_status.dart';
 import 'risk_management_tab.dart';
 
 class DashboardTab extends StatelessWidget {
@@ -11,7 +12,8 @@ class DashboardTab extends StatelessWidget {
   const DashboardTab({super.key, required this.onModuleSelected});
   @override
   Widget build(BuildContext context) {
-    final reports = context.watch<AppState>().riskReports;
+    final state = context.watch<AppState>();
+    final reports = state.riskReports;
     return SafeArea(
         child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -73,7 +75,10 @@ class DashboardTab extends StatelessWidget {
           const SizedBox(height: 10),
           const Eyebrow('Recent Activity'),
           const SizedBox(height: 14),
-          if (reports.isEmpty)
+          const ReportSyncStatus(),
+          if (reports.isEmpty &&
+              !state.reportsLoading &&
+              state.syncError == null)
             const ModulePanel(children: [
               Center(
                   child: Column(children: [

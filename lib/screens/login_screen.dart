@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import '../services/firebase_backend.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_text_field.dart';
@@ -29,10 +30,40 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    context.read<AppState>().login(_email.text.trim());
-    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    try {
+      await context.read<AppState>().login(_email.text.trim(), _password.text);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(friendlyError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_email.text.trim().contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enter your email address first.')));
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await context.read<AppState>().resetPassword(_email.text.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'If an account exists for this email, a reset link will be sent.')));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(friendlyError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -99,6 +130,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   loading: _loading,
                   onPressed: _submit,
                 ),
+                Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                        onPressed: _loading ? null : _resetPassword,
+                        child: const Text('Forgot password?'))),
                 const SizedBox(height: 20),
                 Wrap(
                   alignment: WrapAlignment.center,

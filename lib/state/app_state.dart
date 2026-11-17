@@ -1,114 +1,149 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/project.dart';
 import '../models/violation.dart';
 import '../models/risk_assessment.dart';
+import '../services/app_backend.dart';
+import '../services/firebase_backend.dart';
 
-/// Holds session + project data in memory.
-///
-/// This stands in for the real backend (REST API / Firestore, per the
-/// report's software requirements) so the UI is fully navigable and
-/// demoable before the integration is wired up. Swap the bodies of these
-/// methods for real API/Firestore calls when the backend is ready.
 class AppState extends ChangeNotifier {
-  String? userName;
-  String? userEmail;
-  bool get isLoggedIn => userEmail != null;
+  final AppBackend? backend;
+  AppState({this.backend}) {
+    authReady = backend == null;
+    _authSubscription =
+        backend?.sessions.listen(_sessionChanged, onError: (Object error) {
+      authReady = true;
+      syncError = friendlyError(error);
+      notifyListeners();
+    });
+  }
+  AuthSession? session;
+  String? get userName => session?.name ?? session?.email?.split('@').first;
+  String? get userEmail => session?.email;
+  bool get isLoggedIn => session != null;
+  bool authReady = false;
+  bool reportsLoading = false;
+  String? syncError;
   final List<RiskAssessment> riskReports = [];
-  void saveRiskReport(RiskAssessment report) {
-    riskReports.insert(0, report);
+  final List<Project> projects = [];
+  final Set<String> _draftIds = {};
+  StreamSubscription<AuthSession?>? _authSubscription;
+  StreamSubscription<List<RiskAssessment>>? _riskSubscription;
+  StreamSubscription<List<Project>>? _projectSubscription;
+  int _generation = 0;
+
+  void _sessionChanged(AuthSession? next) {
+    final changed = session?.uid != next?.uid;
+    session = next;
+    authReady = true;
+    if (changed) {
+      _generation++;
+      _riskSubscription?.cancel();
+      _projectSubscription?.cancel();
+      riskReports.clear();
+      projects.clear();
+      _draftIds.clear();
+      syncError = null;
+      if (next != null) {
+        _subscribe(next.uid);
+      } else {
+        reportsLoading = false;
+      }
+    }
     notifyListeners();
   }
 
-  final List<Project> projects = [
-    Project(
-      id: 'p1',
-      name: 'New Office Building',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      numberOfWorkers: 24,
-      percentComplete: 62,
-      remainingTasks: 'Electrical wiring, drywall finishing',
-      riskLevel: RiskLevel.high,
-      violations: const [
-        Violation(
-          title: 'Improper Column Spacing',
-          description:
-              'Columns are placed too close; structural integrity at risk.',
-          severity: Severity.high,
-        ),
-        Violation(
-          title: 'Missing Support Structures',
-          description: 'Critical support beams absent in designated area.',
-          severity: Severity.high,
-        ),
-        Violation(
-          title: 'Structural Misalignment',
-          description: 'Supporting columns are misaligned with beams.',
-          severity: Severity.medium,
-        ),
-      ],
-      riskSummary:
-          'High likelihood of schedule delay due to structural rework and current workforce level.',
-    ),
-    Project(
-      id: 'p2',
-      name: 'Riverside Residency – Block C',
-      createdAt: DateTime.now().subtract(const Duration(days: 9)),
-      numberOfWorkers: 12,
-      percentComplete: 88,
-      remainingTasks: 'Painting, fixtures',
-      riskLevel: RiskLevel.low,
-      violations: const [
-        Violation(
-          title: 'Minor Door Clearance Issue',
-          description:
-              'One doorway is slightly under the recommended clearance width.',
-          severity: Severity.low,
-        ),
-      ],
-      riskSummary: 'Low risk. Project is on track to finish within schedule.',
-    ),
-    Project(
-      id: 'p3',
-      name: 'Al-Habib Plaza Renovation',
-      createdAt: DateTime.now().subtract(const Duration(days: 20)),
-      numberOfWorkers: 8,
-      percentComplete: 35,
-      remainingTasks: 'Framing, MEP rough-in, inspection',
-      riskLevel: RiskLevel.medium,
-      violations: const [
-        Violation(
-          title: 'Staircase Width Violation',
-          description:
-              'Staircase width is below the minimum simplified safety guideline.',
-          severity: Severity.medium,
-        ),
-        Violation(
-          title: 'Window Egress Concern',
-          description:
-              'Bedroom window opening may not meet emergency egress size.',
-          severity: Severity.medium,
-        ),
-      ],
-      riskSummary:
-          'Moderate risk driven by low current workforce relative to remaining scope.',
-    ),
-  ];
+  void _subscribe(String uid) {
+    final generation = _generation;
+    reportsLoading = true;
+    var riskReceived = false, projectsReceived = false;
+    void received() {
+      reportsLoading = !riskReceived || !projectsReceived;
+    }
 
-  void login(String email) {
-    userEmail = email;
-    userName ??= email.split('@').first;
+    void failed(Object error) {
+      if (generation != _generation) return;
+      syncError = friendlyError(error);
+      reportsLoading = false;
+      notifyListeners();
+    }
+
+    _riskSubscription = backend!.watchRiskReports(uid).listen((reports) {
+      if (generation != _generation) return;
+      riskReports
+        ..clear()
+        ..addAll(reports);
+      riskReceived = true;
+      received();
+      notifyListeners();
+    }, onError: failed);
+    _projectSubscription = backend!.watchProjects(uid).listen((reports) {
+      if (generation != _generation) return;
+      final local = {for (final p in projects) p.id: p};
+      final drafts = projects
+          .where((p) =>
+              _draftIds.contains(p.id) && !reports.any((r) => r.id == p.id))
+          .toList();
+      for (final report in reports) {
+        report.floorPlanPath = local[report.id]?.floorPlanPath;
+      }
+      projects
+        ..clear()
+        ..addAll([...drafts, ...reports]);
+      projectsReceived = true;
+      received();
+      notifyListeners();
+    }, onError: failed);
+  }
+
+  void retryReports() {
+    if (backend == null || session == null) return;
+    _generation++;
+    _riskSubscription?.cancel();
+    _projectSubscription?.cancel();
+    syncError = null;
+    _subscribe(session!.uid);
     notifyListeners();
   }
 
-  void signUp(String fullName, String email) {
-    userName = fullName;
-    userEmail = email;
-    notifyListeners();
+  AppBackend get _requiredBackend =>
+      backend ??
+      (throw const AppFailure('Configure Firebase before signing in.'));
+  Future<void> login(String email, String password) =>
+      _requiredBackend.login(email, password);
+  Future<void> signUp(String fullName, String email, String password) =>
+      _requiredBackend.signUp(fullName, email, password);
+  Future<void> resetPassword(String email) =>
+      _requiredBackend.resetPassword(email);
+  Future<void> logout() async {
+    await _requiredBackend.logout();
+    _sessionChanged(null);
   }
 
-  void logout() {
-    userEmail = null;
-    notifyListeners();
+  Future<void> saveRiskReport(RiskAssessment report) async {
+    if (backend == null) {
+      riskReports.insert(0, report);
+      notifyListeners();
+      return;
+    }
+    final uid = session?.uid;
+    if (uid == null) throw const AppFailure('Sign in to save reports.');
+    await backend!
+        .saveRiskReport(
+            uid, report.assessedAt.microsecondsSinceEpoch.toString(), report)
+        .timeout(const Duration(seconds: 20));
+    if (session?.uid != uid) {
+      throw const AppFailure('Your session changed. Sign in and try again.');
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _authSubscription?.cancel();
+    _riskSubscription?.cancel();
+    _projectSubscription?.cancel();
+    super.dispose();
   }
 
   Project createProject(String name) {
@@ -118,6 +153,7 @@ class AppState extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
     projects.insert(0, project);
+    _draftIds.add(project.id);
     notifyListeners();
     return project;
   }
@@ -137,7 +173,11 @@ class AppState extends ChangeNotifier {
 
   /// Mocks the computer-vision + ML analysis pipeline described in the
   /// report (structural detection, rule comparison, risk prediction).
-  void completeAnalysis(String projectId) {
+  Future<void> completeAnalysis(String projectId) async {
+    final uid = session?.uid;
+    if (backend != null && uid == null) {
+      throw const AppFailure('Sign in to save reports.');
+    }
     final project = projects.firstWhere((p) => p.id == projectId);
     final workers = project.numberOfWorkers ?? 10;
     final progress = project.percentComplete ?? 50;
@@ -173,6 +213,13 @@ class AppState extends ChangeNotifier {
             ? 'Moderate risk — monitor workforce allocation over the next phase.'
             : 'Low risk. Project is progressing within safe parameters.';
 
+    if (backend != null) {
+      await backend!
+          .saveProject(uid!, project)
+          .timeout(const Duration(seconds: 20));
+      _draftIds.remove(project.id);
+      if (session?.uid != uid) throw const AppFailure('Your session changed.');
+    }
     notifyListeners();
   }
 }

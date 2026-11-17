@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import '../services/firebase_backend.dart';
 import '../theme/app_theme.dart';
 
 class AnalyzingScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _AnalyzingScreenState extends State<AnalyzingScreen> {
     'Predicting construction risk…',
   ];
   int _step = 0;
+  String? _error;
 
   @override
   void initState() {
@@ -34,9 +36,14 @@ class _AnalyzingScreenState extends State<AnalyzingScreen> {
     }
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
-    context.read<AppState>().completeAnalysis(widget.projectId);
-    Navigator.pushReplacementNamed(context, '/result',
-        arguments: widget.projectId);
+    try {
+      await context.read<AppState>().completeAnalysis(widget.projectId);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/result',
+          arguments: widget.projectId);
+    } catch (error) {
+      if (mounted) setState(() => _error = friendlyError(error));
+    }
   }
 
   @override
@@ -49,6 +56,18 @@ class _AnalyzingScreenState extends State<AnalyzingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (_error != null) ...[
+                Text(_error!, textAlign: TextAlign.center),
+                TextButton(
+                    onPressed: () {
+                      setState(() => _error = null);
+                      _run();
+                    },
+                    child: const Text('Retry saving report')),
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Back')),
+              ],
               Container(
                 width: 96,
                 height: 96,

@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import '../models/risk_assessment.dart';
 import '../state/app_state.dart';
+import '../services/firebase_backend.dart';
 import '../theme/app_theme.dart';
 import '../widgets/module_ui.dart';
 
@@ -40,6 +41,8 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
   int _step = 0;
   final List<SiteMaterial> _materials = [];
   RiskAssessment? _report;
+  RiskAssessment? _pendingReport;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -174,7 +177,10 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
       message('Skilled and unskilled workers must add up to total workers.');
       return;
     }
-    setState(() => _step = 1);
+    setState(() {
+      _pendingReport = null;
+      _step = 1;
+    });
   }
 
   void message(String text) =>
@@ -186,6 +192,7 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
         context: context, builder: (_) => _MaterialDialog(material: existing));
     if (material != null && mounted) {
       setState(() {
+        _pendingReport = null;
         if (index == null) {
           _materials.add(material);
         } else {
@@ -195,25 +202,41 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
     }
   }
 
-  void generate() {
-    final report = RiskAssessment(
-        name: _fields['Project Name']!.text.trim(),
-        type: _type,
-        location: _fields['Location']!.text.trim(),
-        size: _fields['Project Size']!.text,
-        unit: _unit,
-        stage: _stage,
-        remaining: _fields['Remaining Work']!.text.trim(),
-        start: _start!,
-        completion: _completion!,
-        budget: number('Estimated Budget (PKR)'),
-        expenses: expenses,
-        progress: _progress,
-        workers: number('Total Workers').toInt(),
-        skilled: number('Skilled Workers').toInt(),
-        materials: List.unmodifiable(_materials));
-    context.read<AppState>().saveRiskReport(report);
-    setState(() => _report = report);
+  Future<void> generate() async {
+    if (_saving) return;
+    final report = _pendingReport ??
+        RiskAssessment(
+            name: _fields['Project Name']!.text.trim(),
+            type: _type,
+            location: _fields['Location']!.text.trim(),
+            size: _fields['Project Size']!.text,
+            unit: _unit,
+            stage: _stage,
+            remaining: _fields['Remaining Work']!.text.trim(),
+            start: _start!,
+            completion: _completion!,
+            budget: number('Estimated Budget (PKR)'),
+            expenses: expenses,
+            progress: _progress,
+            workers: number('Total Workers').toInt(),
+            skilled: number('Skilled Workers').toInt(),
+            floors: number('Number of Floors').toInt(),
+            rooms: number('Number of Rooms').toInt(),
+            unskilled: number('Unskilled Workers').toInt(),
+            labourCost: number('Labour Cost So Far (PKR)'),
+            materialCost: number('Material Cost So Far (PKR)'),
+            otherExpenses: number('Other Expenses So Far (PKR)'),
+            materials: List.unmodifiable(_materials));
+    _pendingReport = report;
+    setState(() => _saving = true);
+    try {
+      await context.read<AppState>().saveRiskReport(report);
+      if (mounted) setState(() => _report = report);
+    } catch (error) {
+      if (mounted) message(friendlyError(error));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -223,6 +246,7 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
           report: _report!,
           onNew: () => setState(() {
                 _report = null;
+                _pendingReport = null;
                 _step = 0;
               }));
     }
@@ -374,11 +398,16 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
                       style: const TextStyle(fontWeight: FontWeight.w800))),
               IconButton(
                   tooltip: 'Edit material',
-                  onPressed: () => editMaterial(i),
+                  onPressed: _saving ? null : () => editMaterial(i),
                   icon: const Icon(Icons.edit_outlined, size: 18)),
               IconButton(
                   tooltip: 'Remove material',
-                  onPressed: () => setState(() => _materials.removeAt(i)),
+                  onPressed: _saving
+                      ? null
+                      : () => setState(() {
+                            _pendingReport = null;
+                            _materials.removeAt(i);
+                          }),
                   icon: const Icon(Icons.delete_outline,
                       size: 18, color: AppColors.danger))
             ]),
@@ -391,14 +420,15 @@ class _RiskManagementTabState extends State<RiskManagementTab> {
                       fontSize: 12, color: AppColors.textSecondary)),
           ]),
         OutlinedButton.icon(
-            onPressed: () => editMaterial(),
+            onPressed: _saving ? null : () => editMaterial(),
             icon: const Icon(Icons.add),
             label: const Text('Add Material')),
         const SizedBox(height: 20),
-        ModuleButton('Generate Risk Report',
-            onPressed: generate, icon: Icons.auto_awesome_outlined),
+        ModuleButton(_saving ? 'Saving report…' : 'Generate Risk Report',
+            onPressed: _saving ? null : generate,
+            icon: Icons.auto_awesome_outlined),
         TextButton.icon(
-            onPressed: () => setState(() => _step = 0),
+            onPressed: _saving ? null : () => setState(() => _step = 0),
             icon: const Icon(Icons.arrow_back, size: 16),
             label: const Text('Back')),
       ],

@@ -46,3 +46,26 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local Firebase configuration
+**/google-services*.json
+**/GoogleService-Info*.plist
+/lib/firebase_options.dart
+/firebase.*.local.json
+/.firebaserc
+/.firebase/
+firebase-debug.log*
+firestore-debug.log*
+
+# Environment, service-account and signing files
+.env
+.env.*
+!.env.example
+**/*service-account*.json
+**/serviceAccount*.json
+**/*firebase-adminsdk*.json
+**/key.properties
+*.jks
+*.keystore
+*.p12
+*.pem
